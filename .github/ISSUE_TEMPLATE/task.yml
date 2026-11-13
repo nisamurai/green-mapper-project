@@ -1,0 +1,30 @@
+name: Задача GreenMapper
+description: Функция, настройка или документация проекта
+title: "[GM-000] "
+body:
+  - type: textarea
+    id: result
+    attributes:
+      label: Результат
+      description: Какое поведение или материал нужно получить
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Основание
+      description: Идентификаторы FS и пункты HLD. Для процесса укажите задание ТРКПО
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии приёмки
+      description: Проверяемые условия готовности
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Зависимости
+      description: Связанные задачи и необходимые результаты
