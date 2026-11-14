@@ -57,7 +57,7 @@ interface CreateReportState {
 	longitude?: string | number;
 }
 
-const maxFilesCount = 0;
+const maxFilesCount = 3;
 const maxFileSizeBytes = 3 * 1024 * 1024;
 const allowedMimeTypes = new Set(["image/jpeg", "image/png"]);
 
