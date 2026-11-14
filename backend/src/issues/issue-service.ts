@@ -61,7 +61,6 @@ export class IssueService {
 	}): Promise<ServiceSuccess<Record<string, unknown>> | ServiceFailure> {
 		const textError = validateIssueText(input);
 		if (textError) return { ok: false, status: 400, error: textError };
-		if (input.files?.length) return {ok:false,status:422,error:"Images are unavailable"};
 		const files = validateIssueFiles(input.files);
 		if (!files.ok) return { ok: false, status: 422, error: files.error };
 
