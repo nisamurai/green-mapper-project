@@ -1,0 +1,1 @@
+ALTER TABLE "issue_types" ALTER COLUMN "name" SET DATA TYPE varchar(250);
