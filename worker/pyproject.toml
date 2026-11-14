@@ -1,0 +1,12 @@
+[project]
+name = "worker"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aio-pika>=9.6.2",
+    "aiohttp>=3.13.5",
+    "aiohttp-retry>=2.9.1",
+    "minio>=7.2.20",
+]
