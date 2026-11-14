@@ -1,4 +1,4 @@
-export const Login = () => null;
+export { Login } from "./auth/login";
 export { SignUp } from "./auth/sign-up";
 export const TwoFactor = () => null;
 export const Home = () => null;
