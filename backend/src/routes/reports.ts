@@ -44,7 +44,7 @@ export const reportsRouter = new Elysia({ prefix: "/reports" })
       const filters = [];
       const policy = describeListVisibility(user, {
         showMyOnly: !!showMyOnly,
-        showMatureOnly: false,
+        showMatureOnly: !!showMatureOnly,
       });
 
       if (policy.restrictToUserId) {
