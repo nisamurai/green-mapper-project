@@ -87,4 +87,138 @@ export const reportsRouter = new Elysia({ prefix: "/reports" })
       body: t.Object({ statusId: t.Number() }),
       auth: true, // Требуется аутентификация
     },
+  )
+  .put(
+    "/:id/expectedResolutionDate",
+    async ({ params: { id }, body, user, set, serviceRequest }) => {
+      // Проверяем, авторизован ли пользователь и является ли он админом
+      if (
+        !serviceRequest &&
+        user?.role !== "admin" &&
+        user?.role !== "operator" &&
+        user?.role !== "superAdmin"
+      ) {
+        set.status = 403; // Forbidden
+        return { error: "Forbidden" };
+      }
+
+      if (!id) {
+        return {
+          error: "Invalid request body. 'statusId' (number) is required.",
+        };
+      }
+
+      try {
+        const updatedIssue = await db.transaction(async (tx) => {
+          const existingIssue = await tx.query.issues.findFirst({
+            where: eq(schema.issues.issueId, id),
+            columns: {
+              issueId: true,
+              statusId: true,
+              userId: true,
+            },
+          });
+
+          if (!existingIssue) {
+            return null;
+          }
+          // Обновляем предполагаемую дату решения заявки по ID
+          const updatedIssues = await tx
+            .update(schema.issues)
+            .set({
+              expectedResolutionDate: body.expectedResolutionDate.toISOString(),
+            })
+            .where(eq(schema.issues.issueId, id))
+            .returning();
+
+          return updatedIssues[0];
+        });
+
+        if (!updatedIssue) {
+          set.status = 404; // Not Found
+          return { error: `Issue with ID ${id} not found.` };
+        }
+
+        set.status = 200; // OK
+        return { success: true, issue: updatedIssue };
+      } catch (error) {
+        console.error(
+          `Error updating resolution Date for issue with ID ${id}:`,
+          error,
+        );
+        set.status = 500;
+        return { error: "Internal server error." };
+      }
+    },
+    {
+      params: t.Object({ id: t.Number() }),
+      body: t.Object({ expectedResolutionDate: t.Date() }),
+      auth: true, // Требуется аутентификация
+    },
+  )
+  .put(
+    "/:id/matureContent",
+    async ({ params: { id }, body, user, set, serviceRequest }) => {
+      // Проверяем, авторизован ли пользователь и является ли он админом
+      if (
+        !serviceRequest &&
+        user?.role !== "admin" &&
+        user?.role !== "operator" &&
+        user?.role !== "superAdmin"
+      ) {
+        set.status = 403; // Forbidden
+        return { error: "Forbidden" };
+      }
+
+      if (!id) {
+        return {
+          error: "Invalid request body. 'statusId' (number) is required.",
+        };
+      }
+
+      try {
+        const updatedIssue = await db.transaction(async (tx) => {
+          const existingIssue = await tx.query.issues.findFirst({
+            where: eq(schema.issues.issueId, id),
+            columns: {
+              issueId: true,
+              statusId: true,
+              userId: true,
+            },
+          });
+
+          if (!existingIssue) {
+            return null;
+          }
+          // Обновляем тег заявки по ID
+          const updatedIssues = await tx
+            .update(schema.issues)
+            .set({ matureContent: body.matureContent })
+            .where(eq(schema.issues.issueId, id))
+            .returning();
+
+          return updatedIssues[0];
+        });
+
+        if (!updatedIssue) {
+          set.status = 404; // Not Found
+          return { error: `Issue with ID ${id} not found.` };
+        }
+
+        set.status = 200; // OK
+        return { success: true, issue: updatedIssue };
+      } catch (error) {
+        console.error(
+          `Error updating matureContent tag for issue with ID ${id}:`,
+          error,
+        );
+        set.status = 500;
+        return { error: "Internal server error." };
+      }
+    },
+    {
+      params: t.Object({ id: t.Number() }),
+      body: t.Object({ matureContent: t.Boolean() }),
+      auth: true, // Требуется аутентификация
+    },
   );
