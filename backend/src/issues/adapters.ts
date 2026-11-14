@@ -31,7 +31,21 @@ export const randomIdGenerator: IdGenerator = {
 	next: () => crypto.randomUUID(),
 };
 
-export class MinioObjectStorage implements ObjectStorage { async putFiles(files: UploadFile[]) { if(files.length) throw new Error("Images are unavailable"); return []; } async removeFiles(paths: string[]) {} }
+export class MinioObjectStorage implements ObjectStorage {
+	async putFiles(files: UploadFile[], issueId: number, ids: IdGenerator) {
+		return putIntoBucketMultiple(
+			files as File[],
+			issueId,
+			undefined,
+			"report_photos",
+			() => ids.next(),
+		);
+	}
+
+	async removeFiles(paths: string[]) {
+		await removeFromBucketMultiple(paths);
+	}
+}
 
 export class RabbitIssueQueue implements IssueQueue { async notifyCreated(issue: {issueId:number;createdAt:Date}) {} }
 

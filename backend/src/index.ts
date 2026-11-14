@@ -109,3 +109,5 @@ const signInSocialHandler = async (ctx: any) => {
 };
 
 const app = new Elysia().use(cors({origin:(process.env.CORS_ORIGIN || "").split(","),credentials:true})).get("/health", () => ({status:"ok"})).get("/social-sign-in",signInSocialHandler).post("/social-sign-in",signInSocialHandler).post("/auth/sign-in/social",signInSocialHandler).post("/api/auth/sign-in/social",signInSocialHandler).mount(handleAuthRequest).use(usersRouter).use(reportsRouter).listen({hostname:"0.0.0.0",port:3000});
+import { createBucketInNotExist } from "./utils/minio";
+void createBucketInNotExist().catch(console.error);
