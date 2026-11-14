@@ -230,7 +230,6 @@ function DarkMapSPB() {
                         }
 
                     } else {
-                        return;
                         // Если клик был по пустой области карты
                         const coordinate = event.coordinate;
                         const lonLat = toLonLat(coordinate);
