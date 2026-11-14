@@ -1,10 +1,2 @@
-export { Login } from "./auth/login";
-export { SignUp } from "./auth/sign-up";
-export { TwoFactor } from "./auth/two-factor";
-export { Home } from "./app/home";
-export { DashboardCreateReport } from "./app/dashboard/create-report";
-export { DashboardProfile } from "./app/dashboard/profile";
-export { DashboardReports } from "./app/dashboard/reports";
-export { DashboardReportsPanel } from "./app/dashboard/reports-panel";
-export { DashboardViewReport } from "./app/dashboard/view-report";
-export const AccessMangment = () => null;
+export * from "./app"
+export * from "./auth"
