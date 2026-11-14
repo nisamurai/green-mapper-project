@@ -224,6 +224,69 @@ export const reportsRouter = new Elysia({ prefix: "/reports" })
     },
   )
   .get(
+    "/:id",
+    async ({ params: { id }, status, user, serviceRequest }) => {
+      // Запрос для получения одной заявки по ID (может быть расширен при необходимости)
+      const report = await db
+        .select({
+          issueId: schema.issues.issueId,
+          shortDescription: schema.issues.shortDescription,
+          detailedDescription: schema.issues.detailedDescription,
+          address: schema.issues.address,
+          latitude: schema.issues.latitude,
+          longitude: schema.issues.longitude,
+          createdAt: schema.issues.createdAt,
+          expectedResolutionDate: schema.issues.expectedResolutionDate,
+          statusName: schema.issueStatuses.name,
+          typeName: schema.issueTypes.name,
+          userName: schema.user.name,
+          userPoints: schema.user.points,
+          statusId: schema.issues.statusId,
+          userId: schema.issues.userId,
+          matureContent: schema.issues.matureContent,
+          links: sql<string[]>`(
+                SELECT COALESCE(
+                  json_agg(${schema.photos.filePath}),
+                  '[]'::json
+                )
+                FROM ${schema.photos} 
+                WHERE ${schema.photos.issueId} = ${schema.issues.issueId}
+              )`,
+        })
+        .from(schema.issues)
+        .leftJoin(schema.user, eq(schema.issues.userId, schema.user.id))
+        .leftJoin(
+          schema.issueStatuses,
+          eq(schema.issues.statusId, schema.issueStatuses.statusId),
+        )
+        .leftJoin(
+          schema.issueTypes,
+          eq(schema.issues.typeId, schema.issueTypes.typeId),
+        )
+        .where(eq(schema.issues.issueId, id))
+        .limit(1);
+
+      if (!report || report.length === 0) return status("Not Found");
+
+      if (
+        !canViewIssue(
+          {
+            statusId: report[0].statusId,
+            userId: report[0].userId,
+            matureContent: report[0].matureContent,
+          },
+          user,
+          serviceRequest,
+        )
+      ) {
+        return status("Not Found");
+      }
+
+      return report[0];
+    },
+    { params: t.Object({ id: t.Number() }), auth: false, partialAuth: true },
+  )
+  .get(
     "/issue-types",
     async () => {
       // Запрос для получения списка типов заявок
