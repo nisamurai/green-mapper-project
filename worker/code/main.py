@@ -63,8 +63,24 @@ class RabbitMQClient:
             except Exception as e:
                 logger.error(f"Error processing message: {e}")
                 
-                await message.reject(requeue=False)
+                if retry_count < max_retries:
+                    logger.warning(f"Moving message to retry queue ({retry_count + 1}/{max_retries})")
 
+                    if not self.channel:
+                        raise Exception("Channel not available")
+
+                    A = await message.channel.basic_publish(
+                            body=message.body,
+                            
+                            properties= spec.Basic.Properties(headers={"x-retry-count": retry_count + 1}, delivery_mode=2),
+                            routing_key="issue.created.retry",
+                        ),
+                    await message.ack()
+                    
+                else:
+                    logger.critical("Max retries exceeded, sending to DLQ")
+                    await message.reject(requeue=False)
+        
         await queue.consume(on_message)
         logger.info("Started consuming issue.created messages")
         
