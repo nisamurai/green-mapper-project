@@ -202,7 +202,6 @@ function DarkMapSPB() {
 
                 // Обработчик клика по карте
                 map.on("click", (event) => {
-                    if (Boolean(1)) return;
                     console.log("Map clicked");
                     const feature = map.forEachFeatureAtPixel(event.pixel, function (feature) {
                         return feature as Feature<Point>;
@@ -231,6 +230,7 @@ function DarkMapSPB() {
                         }
 
                     } else {
+                        return;
                         // Если клик был по пустой области карты
                         const coordinate = event.coordinate;
                         const lonLat = toLonLat(coordinate);
