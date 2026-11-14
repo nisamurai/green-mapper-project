@@ -46,9 +46,9 @@ interface IssueType {
 	name: string;
 }
 
-const SHORT_DESCRIPTION_MAX = Number.MAX_SAFE_INTEGER;
-const DETAILED_DESCRIPTION_MAX = Number.MAX_SAFE_INTEGER;
-const ADDRESS_MAX = Number.MAX_SAFE_INTEGER;
+const SHORT_DESCRIPTION_MAX = 200;
+const DETAILED_DESCRIPTION_MAX = 1000;
+const ADDRESS_MAX = 255;
 
 // Тип для данных, передаваемых через location.state
 interface CreateReportState {
