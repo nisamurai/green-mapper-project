@@ -1,0 +1,28 @@
+:80 {
+    root * /srv
+
+    route {
+        # Проксирование API-запросов на backend
+        # Аналогично настройке proxy в vite.config.ts:
+        #   "/api" -> http://localhost:3000 (с обрезкой префикса /api)
+        handle_path /api/* {
+            reverse_proxy replace_me
+        }
+
+        # Проксирование geolocation по IP через Caddy, чтобы убрать mixed content
+        handle_path /ip/* {
+            reverse_proxy http://ip-api.com
+        }
+
+        # Проксирование фотографий из MinIO через тот же origin
+        handle_path /photos/* {
+            reverse_proxy http://minio:9000
+        }
+
+        # Все остальные запросы обслуживаем как SPA (React / Vite)
+        handle {
+            try_files {path} /index.html
+            file_server
+        }
+    }
+}
