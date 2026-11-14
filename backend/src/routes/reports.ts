@@ -65,4 +65,26 @@ export const reportsRouter = new Elysia({ prefix: "/reports" })
       body: createReportBody,
       auth: true,
     },
+  )
+  .put(
+    "/:id/status",
+    async ({ params: { id }, body, user, set, serviceRequest }) => {
+      if (serviceRequest) {
+        set.status = 403;
+        return { error: "Forbidden" };
+      }
+      const result = await issueService.changeStatus({
+        id,
+        statusId: body.statusId,
+        role: user?.role,
+      });
+      set.status = result.status;
+      if (!result.ok) return { error: result.error };
+      return { success: true, issue: result.data };
+    },
+    {
+      params: t.Object({ id: t.Number() }),
+      body: t.Object({ statusId: t.Number() }),
+      auth: true, // Требуется аутентификация
+    },
   );
