@@ -172,6 +172,7 @@ export const auth = betterAuth({
 			disableIpTracking: false,
 		},
 	},
+	rateLimit: { enabled: true, max: 5, window: 10, storage: "memory" },
 	logger: { disabled: process.env.BETTER_AUTH_DISABLE_LOGGER === "true" },
 });
 
