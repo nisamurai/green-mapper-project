@@ -6,5 +6,5 @@ export { DashboardCreateReport } from "./app/dashboard/create-report";
 export const DashboardProfile = () => null;
 export { DashboardReports } from "./app/dashboard/reports";
 export { DashboardReportsPanel } from "./app/dashboard/reports-panel";
-export const DashboardViewReport = () => null;
+export { DashboardViewReport } from "./app/dashboard/view-report";
 export const AccessMangment = () => null;
