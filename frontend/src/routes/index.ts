@@ -1,0 +1,10 @@
+export const Login = () => null;
+export const SignUp = () => null;
+export const TwoFactor = () => null;
+export const Home = () => null;
+export const DashboardCreateReport = () => null;
+export const DashboardProfile = () => null;
+export const DashboardReports = () => null;
+export const DashboardReportsPanel = () => null;
+export const DashboardViewReport = () => null;
+export const AccessMangment = () => null;
