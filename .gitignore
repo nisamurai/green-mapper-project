@@ -1,0 +1,7 @@
+# Test coverage
+coverage/
+*.lcov
+.nyc_output/
+*.log
+*.env
+__pycache__

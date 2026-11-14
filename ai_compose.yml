@@ -1,0 +1,13 @@
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "28080:11434"
+    volumes:
+      - ollama:/root/.ollama
+    gpus: all
+    restart: unless-stopped
+
+volumes:
+  ollama:
