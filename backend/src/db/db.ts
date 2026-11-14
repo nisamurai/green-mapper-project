@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from "./schema";
-
+import { RedisDrizzleCache } from "./redis-cache";
 
 export const postgresString = (
   "postgresql://" +
@@ -20,5 +20,5 @@ const disableRedisCache = process.env.DISABLE_REDIS_CACHE === "true";
 export const db = drizzle(pool, {
   schema,
   logger: true, // Keep this on to see the cache in action
-  
+  ...(disableRedisCache ? {} : { cache: new RedisDrizzleCache(redisString) }),
 });
