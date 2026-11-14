@@ -5,7 +5,7 @@ import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { openAPI, twoFactor, genericOAuth } from "better-auth/plugins";
 import { sendEmail } from "@/utils/email";
-
+import { tryReserveOtpSend } from "@/utils/otp-cooldown";
 import { eq } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "crypto";
 
@@ -42,6 +42,29 @@ function unsignCookie(signed: string, secret: string): string | null {
 		return null;
 	}
 	return value;
+}
+
+async function otpCooldownKey(request: Request): Promise<string | null> {
+	const secret = process.env.BETTER_AUTH_SECRET;
+	const header = request.headers.get("cookie") ?? "";
+	const cookie =
+		readCookie(header, "swag.two_factor") ??
+		readCookie(header, "__Secure-swag.two_factor");
+	if (!cookie) return null;
+	if (!secret) return `cookie:${cookie}`;
+	const identifier = unsignCookie(cookie, secret);
+	if (!identifier) return `cookie:${cookie}`;
+	const row = await db.query.verification.findFirst({
+		where: eq(schema.verification.identifier, identifier),
+		columns: { value: true },
+	});
+	return row?.value ? `user:${row.value}` : `cookie:${cookie}`;
+}
+
+function isSendOtpRequest(request: Request) {
+	if (request.method !== "POST") return false;
+	const pathname = new URL(request.url).pathname;
+	return pathname.endsWith("/two-factor/send-otp");
 }
 
 export const auth = betterAuth({
@@ -122,7 +145,24 @@ export const auth = betterAuth({
 			]
 		}),
 		openAPI({ path: "/swagger" }),
-
+		twoFactor({
+			skipVerificationOnEnable: true,
+			otpOptions: {
+				digits: 6,
+				// В Better Auth 1.2 это поле задаётся в минутах и одновременно
+				// попадает в срок cookie ожидания входа как число секунд.
+				// Значение по умолчанию — 3 минуты, то есть код живёт 180 секунд.
+				async sendOTP({ user, otp }) {
+					void sendEmail({
+						to: user.email,
+						subject: "GreenMapper: Код подтверждения входа",
+						text: `Ваш код подтверждения: ${otp}`,
+					}).catch((err) => {
+						console.error("Failed to send 2FA OTP email", err);
+					});
+				},
+			},
+		}),
 	],
 	advanced: {
 		cookiePrefix: "swag",
@@ -135,4 +175,36 @@ export const auth = betterAuth({
 	logger: { disabled: process.env.BETTER_AUTH_DISABLE_LOGGER === "true" },
 });
 
-export async function handleAuthRequest(request: Request): Promise<Response> { return auth.handler(request); }
+const guardedOtpRequests = new WeakSet<Request>();
+
+export async function handleAuthRequest(request: Request): Promise<Response> {
+	if (guardedOtpRequests.has(request)) {
+		return auth.handler(request);
+	}
+	guardedOtpRequests.add(request);
+
+	if (isSendOtpRequest(request)) {
+		try {
+			const key = await otpCooldownKey(request);
+			if (key) {
+				const decision = tryReserveOtpSend(key);
+				if (!decision.ok) {
+					return new Response(
+						JSON.stringify({
+							message: "Повторный код можно запросить через минуту",
+							retryAfterSeconds: decision.retryAfterSeconds,
+						}),
+						{
+							status: 429,
+							headers: { "Content-Type": "application/json" },
+						},
+					);
+				}
+			}
+		} catch (error) {
+			console.error("OTP cooldown check failed", error);
+		}
+	}
+
+	return auth.handler(request);
+}
