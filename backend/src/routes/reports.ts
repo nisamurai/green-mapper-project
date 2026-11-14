@@ -500,4 +500,33 @@ export const reportsRouter = new Elysia({ prefix: "/reports" })
       body: t.Object({ matureContent: t.Boolean() }),
       auth: true, // Требуется аутентификация
     },
+  )
+  .put(
+    "/:id/llm_answer",
+    async ({ params: { id }, set, body, serviceRequest }) => {
+      // Проверяем что запрос  от сервера
+      if (!serviceRequest) {
+        set.status = 403; // Forbidden
+        return { error: "Forbidden" };
+      }
+
+      if (!id) {
+        return {
+          error: "Invalid request body. 'statusId' (number) is required.",
+        };
+      }
+
+      const result = await issueService.applyLlmAnswer({
+        id,
+        matureContent: body.matureContent,
+      });
+      set.status = result.status;
+      if (!result.ok) return { error: result.error };
+      return { success: true, issue: result.data };
+    },
+    {
+      params: t.Object({ id: t.Number() }),
+      body: t.Object({ matureContent: t.Boolean() }),
+      partialAuth: true, // Требуется аутентификация
+    },
   );
