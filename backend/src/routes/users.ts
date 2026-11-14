@@ -89,4 +89,58 @@ export const usersRouter = new Elysia({ prefix: "/users" })
         ),
       }),
     },
-  );
+  )
+  .put("/:userId/change_access", async ({ params: {userId}, user, body, set }) => {
+      if (
+        user?.role !== "superAdmin"
+      ) {
+        set.status = 403; // Forbidden
+        return { error: "Forbidden" };
+      }
+
+            try {
+        const updatedUser = await db.transaction(async (tx) => {
+          const existingUser = await tx.query.user.findFirst({
+            where: eq(schema.user.id, userId),
+            columns: {
+              id: true,
+            },
+          });
+
+          if (!existingUser) {
+            return null;
+          }
+          // Обновляем пользователя
+          const updatedUser = await tx
+            .update(schema.user)
+            .set({
+              role: body.role,
+              hasAccessToMatureContent: body.matureContent
+            })
+            .where(eq(schema.user.id, userId))
+            .returning();
+
+          return updatedUser[0];
+        });
+
+        if (!updatedUser) {
+          set.status = 404; // Not Found
+          return { error: `User with ID ${userId} not found.` };
+        }
+
+        set.status = 200; // OK
+        return { success: true, user: updatedUser };
+      } catch (error) {
+        console.error(
+          `Error updating user with id ${userId}:`,
+          error,
+        );
+        set.status = 500;
+        return { error: "Internal server error." };
+      }
+
+  }, {
+    params: t.Object({ userId: t.String() }),
+    body: t.Object({ matureContent: t.Boolean(), role: t.UnionEnum(["user", "admin", "operator", "superAdmin"]) }),
+    auth: true, // Требуется аутентификация
+  });
