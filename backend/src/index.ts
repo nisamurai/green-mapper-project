@@ -3,6 +3,7 @@ import { cors } from "@elysiajs/cors";
 import * as Minio from "minio";
 export const minioClient = new Minio.Client({ endPoint: process.env.IN_CONTAINER ? "minio" : "localhost", port: 9000, useSSL: false, accessKey: process.env.MINIO_ROOT_USER, secretKey: process.env.MINIO_ROOT_PASSWORD });
 import { handleAuthRequest } from "./utils/auth";
+import { usersRouter } from "./routes/users";
 const signInSocialHandler = async (ctx: any) => {
 	try {
 		const readPayload = async () => {
@@ -106,4 +107,4 @@ const signInSocialHandler = async (ctx: any) => {
 	}
 };
 
-const app = new Elysia().use(cors({origin:(process.env.CORS_ORIGIN || "").split(","),credentials:true})).get("/health", () => ({status:"ok"})).get("/social-sign-in",signInSocialHandler).post("/social-sign-in",signInSocialHandler).post("/auth/sign-in/social",signInSocialHandler).post("/api/auth/sign-in/social",signInSocialHandler).mount(handleAuthRequest).listen({hostname:"0.0.0.0",port:3000});
+const app = new Elysia().use(cors({origin:(process.env.CORS_ORIGIN || "").split(","),credentials:true})).get("/health", () => ({status:"ok"})).get("/social-sign-in",signInSocialHandler).post("/social-sign-in",signInSocialHandler).post("/auth/sign-in/social",signInSocialHandler).post("/api/auth/sign-in/social",signInSocialHandler).mount(handleAuthRequest).use(usersRouter).listen({hostname:"0.0.0.0",port:3000});
