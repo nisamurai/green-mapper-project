@@ -1,5 +1,5 @@
 export const Login = () => null;
-export const SignUp = () => null;
+export { SignUp } from "./auth/sign-up";
 export const TwoFactor = () => null;
 export const Home = () => null;
 export const DashboardCreateReport = () => null;
