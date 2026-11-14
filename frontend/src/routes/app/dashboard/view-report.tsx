@@ -472,7 +472,7 @@ export const DashboardViewReport = () => {
             </div>
             <Separator />
 
-            {(isAdmin || isOperator) && Boolean(0) && (
+            {(isAdmin || isOperator) && (
               <div className="space-y-3">
                 <h3 className="font-semibold text-lg flex items-center gap-2">
                   <CogIcon className="w-5 h-5" />
