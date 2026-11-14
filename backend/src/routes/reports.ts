@@ -325,6 +325,26 @@ export const reportsRouter = new Elysia({ prefix: "/reports" })
       auth: true,
     },
   )
+  .delete(
+    "/:id",
+    async ({ params: { id }, user, set, serviceRequest }) => {
+      if (serviceRequest) {
+        set.status = 403;
+        return { error: "Forbidden" };
+      }
+      const result = await issueService.deleteIssue({
+        id,
+        role: user?.role,
+      });
+      set.status = result.status;
+      if (!result.ok) return { error: result.error };
+      return { success: true, issueId: result.data.issueId };
+    },
+    {
+      params: t.Object({ id: t.Number() }),
+      auth: true, // Требуется аутентификация
+    },
+  )
   .put(
     "/:id/status",
     async ({ params: { id }, body, user, set, serviceRequest }) => {
