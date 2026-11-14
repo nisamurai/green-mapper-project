@@ -2,7 +2,7 @@ export { Login } from "./auth/login";
 export { SignUp } from "./auth/sign-up";
 export { TwoFactor } from "./auth/two-factor";
 export { Home } from "./app/home";
-export const DashboardCreateReport = () => null;
+export { DashboardCreateReport } from "./app/dashboard/create-report";
 export const DashboardProfile = () => null;
 export const DashboardReports = () => null;
 export const DashboardReportsPanel = () => null;
