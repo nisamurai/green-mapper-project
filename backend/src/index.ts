@@ -1,10 +1,20 @@
+import { handleAuthRequest } from "@/utils/auth";
+import { createBucketInNotExist } from "@/utils/minio";
 import { Elysia } from "elysia";
+import { swaggerMiddleware } from "./middleware/swagger";
 import { cors } from "@elysiajs/cors";
-import * as Minio from "minio";
-export const minioClient = new Minio.Client({ endPoint: process.env.IN_CONTAINER ? "minio" : "localhost", port: 9000, useSSL: false, accessKey: process.env.MINIO_ROOT_USER, secretKey: process.env.MINIO_ROOT_PASSWORD });
-import { handleAuthRequest } from "./utils/auth";
-import { usersRouter } from "./routes/users";
 import { reportsRouter } from "./routes/reports";
+import { usersRouter } from "./routes/users";
+import * as Minio from 'minio';
+import { rabbitMQ } from "./utils/rabbitmq";
+export const minioClient = new Minio.Client({
+  endPoint: process.env.IN_CONTAINER ? "minio" : 'localhost', // IP or hostname
+  port: 9000,
+  useSSL: false, 
+  accessKey: process.env.MINIO_ROOT_USER, 
+  secretKey: process.env.MINIO_ROOT_PASSWORD
+});
+
 const signInSocialHandler = async (ctx: any) => {
 	try {
 		const readPayload = async () => {
@@ -108,6 +118,47 @@ const signInSocialHandler = async (ctx: any) => {
 	}
 };
 
-const app = new Elysia().use(cors({origin:(process.env.CORS_ORIGIN || "").split(","),credentials:true})).get("/health", () => ({status:"ok"})).get("/social-sign-in",signInSocialHandler).post("/social-sign-in",signInSocialHandler).post("/auth/sign-in/social",signInSocialHandler).post("/api/auth/sign-in/social",signInSocialHandler).mount(handleAuthRequest).use(usersRouter).use(reportsRouter).listen({hostname:"0.0.0.0",port:3000});
-import { createBucketInNotExist } from "./utils/minio";
-void createBucketInNotExist().catch(console.error);
+const app = new Elysia()
+	.use(
+		cors({
+			origin: (process.env.CORS_ORIGIN || "").split(","),
+			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+			credentials: true,
+			allowedHeaders: ["Content-Type", "Authorization"],
+		}),
+	)
+	.get("/health", async () => {
+		return {status: "ok"}
+	})
+	.get("/social-sign-in", signInSocialHandler)
+	.post("/social-sign-in", signInSocialHandler)
+	.use(swaggerMiddleware)
+	.mount(handleAuthRequest)
+	.post("/auth/sign-in/social", signInSocialHandler)
+	.post("/api/auth/sign-in/social", signInSocialHandler)
+	.use(usersRouter)
+	.use(reportsRouter)
+	.listen({
+		hostname: "0.0.0.0",
+		port: 3000
+	});
+
+console.log(`Started at ${app.server?.hostname}:${app.server?.port}`);
+
+async function initServices(attempt = 1) {
+	try {
+		await createBucketInNotExist()
+		await rabbitMQ.connect();
+	} catch (error) {
+		const delayMs = 5000;
+		console.error(`Failed to initialize services (attempt ${attempt}), retry in ${delayMs}ms:`, error);
+		setTimeout(() => {
+			void initServices(attempt + 1);
+		}, delayMs);
+	}
+}
+
+setTimeout(() => {
+	void initServices();
+}, Number(process.env.RABBITMQ_DELAY_SECONDS || "0") * 1000)
+

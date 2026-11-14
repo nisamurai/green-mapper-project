@@ -1,7 +1,7 @@
 import { db } from "@/db/db";
 import * as schema from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
-
+import { rabbitMQ } from "@/utils/rabbitmq";
 import {
 	putIntoBucketMultiple,
 	removeFromBucketMultiple,
@@ -47,7 +47,11 @@ export class MinioObjectStorage implements ObjectStorage {
 	}
 }
 
-export class RabbitIssueQueue implements IssueQueue { async notifyCreated(issue: {issueId:number;createdAt:Date}) {} }
+export class RabbitIssueQueue implements IssueQueue {
+	async notifyCreated(issue: { issueId: number; createdAt: Date }) {
+		await rabbitMQ.notifyIssueCreated(issue);
+	}
+}
 
 function toStoredIssue(row: {
 	issueId: number;
