@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -58,6 +58,8 @@ const schema = z
 
 export const SignUp = () => {
 	const [isPending, setIsPending] = useState(false);
+	const [registeredUserId, setRegisteredUserId] = useState<string | null>(null);
+	const { data: session, error: sessionError, refetch } = authClient.useSession();
 	const navigate = useNavigate();
 	const location = useLocation()
 	const form = useForm<Fields>({
@@ -72,25 +74,41 @@ export const SignUp = () => {
 	const [searchParams] = useSearchParams();
 	const redirectTo = searchParams.get('redirect') || `/${FRONT_PATHS.APP}`;
 
+	useEffect(() => {
+		if (registeredUserId && session?.user.id === registeredUserId) {
+			navigate(redirectTo, { replace: true, state: location.state });
+		}
+	}, [registeredUserId, session, navigate, redirectTo, location.state]);
+
+	useEffect(() => {
+		if (registeredUserId && sessionError) {
+			toast(sessionError.message);
+		}
+	}, [registeredUserId, sessionError]);
+
 	const signup = async ({ name, email, password }: Fields) => {
 		setIsPending(true);
-		const { error } = await authClient.signUp.email({
-			name,
-			email,
-			password,
-			callbackURL: redirectTo,
-			fetchOptions: {
-				onSuccess: (...params) => {
-					console.log(...params);
-					navigate(redirectTo, { replace: true, state: location.state });
-				},
-			},
-		});
-		setIsPending(false);
-
-		if (error) {
-			// toast("unknown error");
-			toast(error.message);
+		try {
+			// After registration, a retry only refreshes the existing session.
+			if (!registeredUserId) {
+				const { data, error } = await authClient.signUp.email({
+					name,
+					email,
+					password,
+					callbackURL: redirectTo,
+				});
+				if (error) {
+					toast(error.message);
+					return;
+				}
+				setRegisteredUserId(data.user.id);
+			}
+			// The protected route must see the same session before navigation.
+			await refetch();
+		} catch {
+			toast("Не удалось завершить вход. Попробуйте ещё раз.");
+		} finally {
+			setIsPending(false);
 		}
 	};
 
